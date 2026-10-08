@@ -467,7 +467,7 @@ async def phase3(pg):
     size_text = await pg.inner_text("#viewer-size") if await pg.locator("#viewer-size").count() else await pg.inner_text(".stage-3d .form-error")
     shown = await pg.inner_text("#viewer-file")
     variants = await pg.eval_on_selector_all("#variants button", "els => els.map(e => e.textContent + (e.getAttribute('aria-pressed') === 'true' ? '*' : ''))")
-    dirs = await pg.eval_on_selector_all("#file-panel-tree [data-filekey^="d:"]", "els => els.map(e => e.dataset.filekey.slice(2)).filter(Boolean)")
+    dirs = await pg.eval_on_selector_all("#file-panel-tree [data-filekey^='d:']", "els => els.map(e => e.dataset.filekey.slice(2)).filter(Boolean)")
     await pg.screenshot(path=str(out / "12-model-page.png"))
     check("a model opens on its own page with a 3D view, parts and variants", "20.0 × 20.0 × 20.0 mm" in size_text and shown == "Presupported/Helmet/helmet.stl"
           and variants == ["Presupported*", "Unsupported", "All"] and dirs == ["Presupported", "Presupported/Arms", "Presupported/Helmet"], (size_text, shown, variants, dirs))
@@ -475,7 +475,7 @@ async def phase3(pg):
     await pg.wait_for_function("() => document.querySelector('#viewer-size')?.textContent.startsWith('8.0')")
     await pg.click("#variants button:text-is('Unsupported')")
     await pg.wait_for_function("() => document.querySelector('#viewer-file')?.textContent === 'Unsupported/Helmet/helmet.stl'")
-    dirs = await pg.eval_on_selector_all("#file-panel-tree [data-filekey^="d:"]", "els => els.map(e => e.dataset.filekey.slice(2)).filter(Boolean)")
+    dirs = await pg.eval_on_selector_all("#file-panel-tree [data-filekey^='d:']", "els => els.map(e => e.dataset.filekey.slice(2)).filter(Boolean)")
     check("the variant switch shows that variant's parts", dirs == ["Unsupported", "Unsupported/Helmet"], dirs)
 
     # 20b. variant names are set in Settings: Resin and FDM folders become a switch

@@ -29,7 +29,7 @@ export function ModelPage({ id }) {
   useLayoutEffect(() => {
     if (!m || m.id !== id) return;
     const src = { kind: "model", id: m.id, rel: m.rel };
-    const initial = m.main?.file ? `f:${m.main.file}` : "d:";
+    const initial = m.main?.entry ? `z:${m.main.file}!${m.main.entry}` : m.main?.file ? `f:${m.main.file}` : "d:";
     setFileSource(src, m.files_list, initial);
   }, [m, id]);
   useEffect(() => {

@@ -435,7 +435,8 @@ export function PartsViews({ src, files, names, open, current, treeKey, panel = 
   if (panel) return html`<div class="parts file-panel-parts">
     ${view === "folders" ? html`<ul class="tree" id="file-panel-tree">
       <li class="tree-dir"><button type="button" class=${`tree-btn${selected.picked.includes("d:") ? " on" : ""}`}
-        data-filekey="d:" aria-selected=${selected.picked.includes("d:")} onClick=${(e) => select(e, "d:")}>
+        data-filekey="d:" aria-selected=${selected.picked.includes("d:")} onClick=${(e) => select(e, "d:")}
+        onContextMenu=${(e) => { if (!selected.picked.includes("d:")) pick("d:"); panelFolderMenu(e, src, ""); }}>
         ${Icon.folder(13)}<span class="tree-name">${src.rel.split("/").pop()}</span>
       </button></li>
       <${PanelNode} node=${makeFileTree(files)} src=${src} names=${names} selected=${selected}

@@ -776,6 +776,8 @@ body:has(.sw-go) .toast { bottom: 92px; }
 .file-panel-resizer { width: 8px; cursor: col-resize; position: absolute; right: -4px; top: 0; bottom: 0; z-index: 2; touch-action: none; }
 .file-panel-resizer:hover, .file-panel-resizer:active { background: color-mix(in srgb, var(--focus) 25%, transparent); }
 .file-panel-row { display: flex; align-items: stretch; min-width: 0; }
+.file-panel-parts .tree-dir > .file-panel-row .tree-icon, .file-panel-parts .tree-dir > .file-panel-row > .tree-btn > svg, #file-panel-tree > .tree-dir > .tree-btn > svg { color: #c98a00; }
+:root[data-theme='dark'] .file-panel-parts .tree-dir > .file-panel-row .tree-icon { color: #f2b705; }
 .file-panel-row > .tree-btn { display: flex; flex: 1; align-items: center; min-width: 0; }
 .file-panel-row > .tree-btn[aria-selected="true"], .file-panel-parts > .tree > li > .tree-btn[aria-selected="true"] { box-shadow: inset 3px 0 0 var(--tool); }
 .file-panel-twisty { display: flex; align-items: center; justify-content: center; flex: 0 0 18px;

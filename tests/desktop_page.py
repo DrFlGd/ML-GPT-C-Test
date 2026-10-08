@@ -1346,6 +1346,69 @@ async def model_workspace_selection(pg):
     check("model workspace selection contract works in the page", all(state.values()), state)
 
 
+async def model_file_panel_checks(pg):
+    """Package A: panel layout, persisted controls, selection and mobile drawer."""
+    await pg.goto(B + "#/browse/unsorted")
+    card = pg.locator(".card:has(.card-name:text-is('Knight Armour'))")
+    await card.wait_for()
+    await card.dblclick()
+    await pg.wait_for_selector("#model-file-panel #file-panel-tree")
+    col = await pg.evaluate("""() => ({
+        sidebar: document.querySelector('.sidebar-root').getBoundingClientRect().left,
+        panel: document.querySelector('#model-file-panel').getBoundingClientRect().left,
+        stage: document.querySelector('#workspace-stage').getBoundingClientRect().left,
+        width: Math.round(document.querySelector('#model-file-panel').getBoundingClientRect().width)
+    })""")
+    await pg.click("#file-panel-collapse")
+    collapsed = round((await pg.locator("#model-file-panel").bounding_box())["width"])
+    await pg.keyboard.press("[")
+    await pg.wait_for_selector("#file-panel-collapse")
+    reopened = round((await pg.locator("#model-file-panel").bounding_box())["width"])
+    check("model workspace has sidebar, resizable panel and stage; [ toggles collapse",
+          col["sidebar"] < col["panel"] < col["stage"] and 295 <= col["width"] <= 305
+          and collapsed == 36 and reopened == col["width"], (col, collapsed, reopened))
+
+    handle = await pg.locator(".file-panel-resizer").bounding_box()
+    await pg.mouse.move(handle["x"] + 3, handle["y"] + 100)
+    await pg.mouse.down()
+    await pg.mouse.move(handle["x"] + 70, handle["y"] + 100, steps=6)
+    await pg.mouse.up()
+    resized = round((await pg.locator("#model-file-panel").bounding_box())["width"])
+    await pg.wait_for_timeout(400)
+    await pg.reload()
+    await pg.wait_for_selector("#model-file-panel #file-panel-tree")
+    restored = round((await pg.locator("#model-file-panel").bounding_box())["width"])
+    check("file panel width and open state persist after reload",
+          resized > 330 and abs(restored - resized) < 3
+          and await pg.locator("#file-panel-collapse").count() == 1, (resized, restored))
+
+    await pg.click("#variants button:text-is('Unsupported')")
+    await pg.wait_for_function("() => document.querySelector('#viewer-file')?.textContent === 'Unsupported/Helmet/helmet.stl'")
+    visible = await pg.eval_on_selector_all("#file-panel-tree [data-filekey^='d:']",
+                                           "els => els.map(e => e.dataset.filekey)")
+    check("file panel variants filter both file rows and viewing area",
+          "d:Unsupported" in visible and "d:Presupported" not in visible, visible)
+
+    await pg.set_viewport_size({"width": 700, "height": 800})
+    await pg.wait_for_timeout(250)
+    off = await pg.evaluate("() => document.querySelector('#model-file-panel').getBoundingClientRect().right < 0")
+    await pg.click("#workspace-files-button")
+    await pg.wait_for_selector("#model-file-panel.drawer-open")
+    await pg.wait_for_timeout(250)
+    shown = await pg.evaluate("() => document.querySelector('#model-file-panel').getBoundingClientRect().right > 0")
+    await pg.click("#file-panel-tree [data-filekey='f:README.md']")
+    await pg.wait_for_selector("#doc-text h1")
+    closed = await pg.locator("#model-file-panel.drawer-open").count() == 0
+    check("the narrow panel opens as a drawer and selecting a file closes it",
+          off and shown and closed, (off, shown, closed))
+    await pg.screenshot(path=str(out / "36-model-workspace-mobile.png"))
+    await pg.set_viewport_size({"width": 1400, "height": 900})
+    await pg.goto(B + "#/import")
+    await pg.wait_for_selector("#sort-page[data-ready]")
+    check("Import stays separate from the model file panel",
+          await pg.locator("#model-file-panel").count() == 0)
+
+
 async def main():
     server = start_server()
     try:
@@ -1392,6 +1455,7 @@ async def main():
             await ui_pass3(pg)
             await import_follow_ups(pg)
             await model_workspace_selection(pg)
+            await model_file_panel_checks(pg)
 
             # 3. renaming the library
             await pg.click('.sidebar a[href="#/settings"]')

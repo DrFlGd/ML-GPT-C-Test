@@ -2159,6 +2159,7 @@ mod tests {
         // the main file prefers the supported variant
         let m = call(&app, "model_get", json!({ "id": id })).await;
         assert_eq!(m["main"]["file"], "Presupported/Helmet/helmet.stl", "{m}");
+        assert!(m["files_list"].as_array().unwrap().iter().all(|f| f["modified"].as_u64().is_some()), "{m}");
         assert_eq!(m["has_thumb"], false);
         let stl = bytes(
             &app,

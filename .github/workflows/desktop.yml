@@ -7,13 +7,15 @@ name: Desktop
 # tools/set_version.py). Reports and screenshots go to the desktop-ci-<os> branches.
 on:
   push:
-    branches: [main]
+    branches: [main, model-workspace-c-viewing]
     paths:
       - "desktop/**"
       - "web/**"
       - "tools/**"
       - "tests/**"
       - ".github/workflows/desktop.yml"
+  pull_request:
+    branches: [model-workspace-b]
   workflow_dispatch:
 
 permissions:
@@ -64,6 +66,8 @@ jobs:
         with: { workspaces: desktop }
       - name: Version ${{ needs.version.outputs.version }}
         run: python tools/set_version.py "${{ needs.version.outputs.version }}"
+      - name: Test model workspace modules
+        run: node --experimental-default-type=module --test tests/filesel.test.mjs tests/contents.test.mjs
       - name: Check and test the Rust code
         working-directory: desktop
         run: |
@@ -142,6 +146,8 @@ jobs:
         with: { workspaces: desktop }
       - name: Version ${{ needs.version.outputs.version }}
         run: python tools/set_version.py "${{ needs.version.outputs.version }}"
+      - name: Test model workspace modules
+        run: node --experimental-default-type=module --test tests/filesel.test.mjs tests/contents.test.mjs
       - name: Check and test the Rust code
         working-directory: desktop
         run: |

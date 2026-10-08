@@ -304,6 +304,20 @@ function panelZipEntryMenu(e, key) {
   openMenu(e, [{ id: "view", label: "Show here", icon: "eye", run: () => pick(key) }]);
 }
 
+function panelArchiveMenu(e, src, f) {
+  const key = `f:${f.rel}`;
+  const lib = ui.get().library;
+  const dir = f.rel.includes("/") ? f.rel.slice(0, f.rel.lastIndexOf("/")) : "";
+  const items = [{ id: "view", label: "Show here", icon: "eye", run: () => pick(key) }];
+  if (ownApp(src) && lib) items.push(
+    { id: "open-own", label: "Open in its own app", icon: "external", run: () => openModelFile({ rel: src.rel }, f.rel) },
+    { id: "folder", label: "Show in folder", icon: "folder",
+      run: () => ctx.platform.library.openPath([lib.path, src.rel, dir].filter(Boolean).join("/")) },
+  );
+  openMenu(e, items);
+}
+
+
 function PanelZipNode({ node, archive, selected, select }) {
   const [expanded, setExpanded] = useState({});
   const dirs = [...node.dirs.values()].sort((a, b) => a.name.localeCompare(b.name));
@@ -364,7 +378,7 @@ function PanelFileRow({ src, f, selected, select, folder = "" }) {
         onClick=${() => setZipOpen(!zipOpen)}>${Icon.chevron(12)}</button>` : null}
       <button type="button" class=${`tree-btn${selected.picked.includes(key) ? " on" : ""}`} data-filekey=${key}
         aria-selected=${selected.picked.includes(key)} title=${f.rel} onClick=${(e) => select(e, key)}
-        onContextMenu=${(e) => { if (!selected.picked.includes(key)) pick(key); fileMenu(e, src, f, open); }}>
+        onContextMenu=${(e) => { if (!selected.picked.includes(key)) pick(key); if (zipped) panelArchiveMenu(e, src, f); else fileMenu(e, src, f, open); }}>
         <span class="tree-icon tree-type"><${TypeTag} name=${f.rel} /></span>
         <span class="tree-name">${name}${folder ? html`<small class="tree-folder muted">${folder}</small>` : null}</span>
         <span class="tree-size muted">${size(f.size || 0)}</span>

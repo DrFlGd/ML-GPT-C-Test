@@ -1,0 +1,72 @@
+   Compiling modlib-core v0.5.0 (D:\a\ML-GPT-C-Test\ML-GPT-C-Test\desktop\core)
+    Finished `release` profile [optimized] target(s) in 45.17s
+     Running unittests src\lib.rs (target\release\deps\modlib_core-7606f5d2577559b3.exe)
+
+running 51 tests
+test api::tests::first_start_asks_where_the_library_goes ... ok
+test api::tests::favourites_live_in_the_library ... ok
+test api::tests::library_files_stay_inside ... ok
+test api::tests::imports_as_a_job_and_moves_between_categories ... ok
+test api::tests::opens_renames_and_remembers_libraries ... ok
+test api::tests::finds_duplicates_and_sets_copies_aside ... ok
+test api::tests::schemas_models_details_and_stars ... ok
+test api::tests::renames_a_category_undoes_it_and_edits_several_models ... ok
+test api::tests::shows_meshes_zips_readmes_and_previews ... ok
+test api::tests::sorts_a_folder_into_the_library_over_two_sittings ... ok
+test archive::tests::lists_and_reads_entries ... ok
+test docs::tests::markdown_without_raw_html ... ok
+test api::tests::subcategories_are_made_kept_renamed_and_removed ... ok
+test dupes::tests::same_prints_compares_contents ... ok
+test dupes::tests::finds_copies_sets_them_aside_and_undoes ... ok
+test api::tests::moves_imports_and_details_are_journalled_and_undone ... ok
+test import::tests::imports_by_move_and_by_checked_copy ... ok
+test import::tests::moves_models_between_categories ... ok
+test import::tests::plans_destinations ... ok
+test import::tests::proposes_models_from_a_messy_folder ... ok
+test index::tests::finds_models_by_schema_depth_and_sidecars ... ok
+test index::tests::refresh_gives_a_new_sidecar_its_id ... ok
+test index::tests::searches_words_filters_and_places ... ok
+test library::tests::creates_a_library_and_keeps_its_id ... ok
+test library::tests::dates ... ok
+test index::tests::cache_rereads_only_what_changed ... ok
+test library::tests::newer_format_is_read_only ... ok
+test library::tests::favourites_round_trip ... ok
+test library::tests::paths_stay_inside ... ok
+test library::tests::slugs ... ok
+test mesh::tests::reads_3mf_with_components_in_other_files ... ok
+test mesh::tests::reads_obj ... ok
+test mesh::tests::reads_stl_both_ways ... ok
+test library::tests::opening_a_folder_of_models_leaves_them_alone ... ok
+test model::tests::kinds_by_extension ... ok
+test model::tests::sidecar_updates_keep_unknown_keys ... ok
+test model::tests::files_summary_and_cover ... ok
+test relayout::tests::older_categories_with_levels_still_move ... ok
+test schema::tests::folder_names_are_cleaned ... ok
+test schema::tests::folder_names_parse_by_template ... ok
+test schema::tests::paths_follow_an_edit_of_the_tree ... ok
+test schema::tests::schemas_are_created_and_listed ... ok
+test sort::tests::files_of_a_group_are_found_by_their_place_in_it ... ok
+test sort::tests::makes_every_folder_at_a_level_a_model ... ok
+test sort::tests::reads_a_folder_tree_as_it_is ... ok
+test sort::tests::sends_groups_joins_splits_and_keeps_choices ... ok
+test relayout::tests::renames_merges_moves_edits_and_undoes ... ok
+test thumb::tests::draws_a_model_into_its_folder ... ok
+test watch::tests::reports_settled_changes_once_and_skips_the_apps_folder ... ok
+test api::tests::notices_folders_changed_outside_the_app ... ok
+test index::tests::ten_thousand_models has been running for over 60 seconds
+test index::tests::ten_thousand_models ... ok
+
+test result: ok. 51 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 92.67s
+
+     Running unittests src\bin\modlib-cli.rs (target\release\deps\modlib_cli-0a89ecaa615f716c.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests modlib_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

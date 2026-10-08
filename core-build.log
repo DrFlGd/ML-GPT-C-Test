@@ -1,0 +1,11 @@
+    Updating crates.io index
+     Locking 475 packages to highest compatible versions
+      Adding base64 v0.22.1 (available: v0.23.1)
+      Adding generic-array v0.14.7 (available: v0.14.9)
+      Adding sha2 v0.10.9 (available: v0.11.0)
+      Adding toml v0.8.2 (available: v0.8.23)
+      Adding toml_datetime v0.6.3 (available: v0.6.11)
+      Adding toml_edit v0.20.2 (available: v0.20.7)
+      Adding zip v2.4.2 (available: v8.6.0)
+   Compiling modlib-core v0.5.0 (D:\a\ML-GPT-C-Test\ML-GPT-C-Test\desktop\core)
+    Finished `release` profile [optimized] target(s) in 1m 35s

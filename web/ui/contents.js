@@ -127,7 +127,7 @@ export function Breadcrumbs({ src, folder = "", archive = null, navigate }) {
 }
 
 function tileMenu(e, src, item, key, archive) {
-  if (!archive && !item.folder) {
+  if (!archive && !item.folder && !/\.zip$/i.test(item.rel)) {
     fileMenu(e, src, item, () => pick(key));
     return;
   }

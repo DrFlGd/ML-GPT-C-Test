@@ -1389,6 +1389,16 @@ async def model_file_panel_checks(pg):
     check("file panel variants filter both file rows and viewing area",
           "d:Unsupported" in visible and "d:Presupported" not in visible, visible)
 
+    await pg.click('#file-panel-views [data-view="all"]')
+    await pg.click(".panel-all [data-filekey='f:README.md']")
+    await pg.click(".panel-all [data-filekey='f:photo.png']", modifiers=["Control"])
+    picked = await pg.locator('.panel-all [aria-selected="true"]').count()
+    await pg.keyboard.press("Escape")
+    empty = await pg.locator('.panel-all [aria-selected="true"]').count()
+    check("file selection is shared across panel rows and Esc clears it",
+          picked == 2 and empty == 0, (picked, empty))
+    await pg.click('#file-panel-views [data-view="folders"]')
+
     await pg.set_viewport_size({"width": 700, "height": 800})
     await pg.wait_for_timeout(250)
     off = await pg.evaluate("() => document.querySelector('#model-file-panel').getBoundingClientRect().right < 0")

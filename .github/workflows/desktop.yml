@@ -66,8 +66,10 @@ jobs:
         with: { workspaces: desktop }
       - name: Version ${{ needs.version.outputs.version }}
         run: python tools/set_version.py "${{ needs.version.outputs.version }}"
-      - name: Test model workspace modules
-        run: node --experimental-default-type=module --test tests/filesel.test.mjs tests/contents.test.mjs
+      - name: Check page syntax and model workspace modules
+        run: |
+          python -m py_compile tests/desktop_page.py
+          node --experimental-default-type=module --test tests/filesel.test.mjs tests/contents.test.mjs
       - name: Check and test the Rust code
         working-directory: desktop
         run: |
@@ -146,8 +148,10 @@ jobs:
         with: { workspaces: desktop }
       - name: Version ${{ needs.version.outputs.version }}
         run: python tools/set_version.py "${{ needs.version.outputs.version }}"
-      - name: Test model workspace modules
-        run: node --experimental-default-type=module --test tests/filesel.test.mjs tests/contents.test.mjs
+      - name: Check page syntax and model workspace modules
+        run: |
+          python -m py_compile tests/desktop_page.py
+          node --experimental-default-type=module --test tests/filesel.test.mjs tests/contents.test.mjs
       - name: Check and test the Rust code
         working-directory: desktop
         run: |

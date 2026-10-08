@@ -927,15 +927,23 @@ async def ui_pass(pg):
     await api(pg, "library_scan", {"full": False})
     await pg.goto(B + "#/browse/unsorted")
     await pg.dblclick(".card:has(.card-name:text-is('Knight Armour'))")
-    await pg.wait_for_selector("#part-tree [data-file='settings.ini']", timeout=30000)
-    greyed = "no-view" in (await pg.get_attribute("#part-tree [data-file='settings.ini']", "class"))
-    why = await pg.get_attribute("#part-tree [data-file='settings.ini']", "title") or ""
-    await pg.click("#part-tree [data-file='settings.ini']", button="right")
+    # Model workspace: unsupported files remain selectable and show an
+    # explicit fallback in the stage. Import's compact no-view rows are kept.
+    unsupported = "#file-panel-tree [data-filekey='f:settings.ini']"
+    await pg.wait_for_selector(unsupported, timeout=30000)
+    await pg.click(unsupported)
+    await pg.wait_for_selector("#workspace-file-fallback")
+    fallback = await pg.inner_text("#workspace-file-fallback")
+    selected = await pg.get_attribute(unsupported, "aria-selected")
+    await pg.click(unsupported, button="right")
     file_menu = await labels_of(pg, "#context-menu .menu-label")
     await pg.keyboard.press("Escape")
     mp_row = await labels_of(pg, "#model-page .action-row button")
-    check("files with no viewer are greyed and open in their own app; the model page has the same row", greyed and "no viewer" in why
-          and file_menu == ["Open in its own app", "Show in folder"] and mp_row == ["Edit details…", "Move to category…", "Star", "Show in folder", "More ▾"], (greyed, why, file_menu, mp_row))
+    check("files without viewers show the fallback and their external-open menu; model actions remain",
+          selected == "true" and "no built-in viewer" in fallback
+          and file_menu == ["Open in its own app", "Show in folder"]
+          and mp_row == ["Edit details…", "Move to category…", "Star", "Show in folder", "More ▾"],
+          (selected, fallback, file_menu, mp_row))
 
     # 39. Import: right-click, Ctrl+A and Esc, Ctrl+Z, and messages clear of the footer
     more = home / "More"

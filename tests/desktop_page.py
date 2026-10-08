@@ -1346,6 +1346,69 @@ async def model_workspace_selection(pg):
     check("model workspace selection contract works in the page", all(state.values()), state)
 
 
+async def workspace_contents(pg):
+    """Package B: model folders, archive contents, list/grid, breadcrumbs, viewers."""
+    await pg.goto(B + "#/browse/unsorted")
+    card = pg.locator(".card:has(.card-name:text-is('Knight Armour'))")
+    await card.wait_for()
+    await card.dblclick()
+    await pg.wait_for_selector("#file-panel-tree")
+    await pg.click("#variants button:text-is('All')")
+    await pg.click('#file-panel-tree [data-filekey="d:"]')
+    await pg.wait_for_selector("#contents-view #contents-items")
+    root = await pg.eval_on_selector_all("#contents-items .contents-item",
+                                         "els => els.map(e => e.dataset.filekey)")
+    check("model folder contents show child folders first and files as tiles",
+          root[:2] == ["d:FDM", "d:Presupported"] or
+          (root and root[0].startswith("d:") and all(key.startswith("d:") for key in root[:3])),
+          root)
+
+    await pg.click('#contents-items [data-filekey="d:Presupported"]')
+    await pg.wait_for_selector('#contents-items [data-filekey="d:Presupported/Helmet"]')
+    await pg.click('#contents-sort')
+    await pg.click('#context-menu [data-action="sort-size"]')
+    folders = await pg.eval_on_selector_all("#contents-items .contents-item",
+                                            "els => els.map(e => e.dataset.filekey)")
+    crumbs = await pg.eval_on_selector_all("#contents-breadcrumb button", "els => els.map(e => e.textContent)")
+    check("folder children sort by largest first and show breadcrumb",
+          folders[:2] == ["d:Presupported/Helmet", "d:Presupported/Arms"]
+          and crumbs[-2:] == ["Knight Armour", "Presupported"], (folders, crumbs))
+
+    await pg.click('#contents-views [data-view="list"]')
+    await pg.wait_for_selector(".contents-list-head")
+    await pg.click(".contents-list-head button:text-is('Name')")
+    await pg.wait_for_selector('#contents-items .contents-list-row')
+    await pg.click('#contents-items [data-filekey="d:Presupported/Arms"]')
+    await pg.click('#contents-items [data-filekey="f:Presupported/Arms/arm.stl"]')
+    await pg.wait_for_function("() => document.querySelector('#viewer-size')?.textContent.startsWith('8.0')")
+    chosen = await pg.inner_text("#viewer-file")
+    await pg.keyboard.press("Backspace")
+    await pg.wait_for_selector('#contents-items [data-filekey="f:Presupported/Arms/arm.stl"]')
+    check("list headings and Backspace navigate to the parent folder",
+          chosen == "Presupported/Arms/arm.stl" and
+          await pg.locator(".contents-list-head").count() == 1, chosen)
+
+    await pg.click('#file-panel-tree [data-filekey="f:extras.zip"]')
+    await pg.wait_for_selector('#contents-items [data-filekey="z:extras.zip!Extras/"]')
+    await pg.click('#contents-items [data-filekey="z:extras.zip!Extras/"]')
+    await pg.wait_for_selector('#contents-items [data-filekey="z:extras.zip!Extras/shield.stl"]')
+    await pg.click('#contents-items [data-filekey="z:extras.zip!Extras/shield.stl"]')
+    await pg.wait_for_function("() => document.querySelector('#viewer-size')?.textContent.startsWith('15.0')")
+    zip_shown = await pg.inner_text("#viewer-file")
+    check("ZIP entries display as folders, and STL entries open without extraction",
+          zip_shown == "extras.zip › Extras/shield.stl"
+          and (library / "Unsorted/Knight Armour/extras.zip").exists(), zip_shown)
+
+    await pg.click('#file-panel-tree [data-filekey="f:photo.png"]')
+    await pg.wait_for_selector("#picture-big")
+    await pg.click('#file-panel-tree [data-filekey="f:README.md"]')
+    await pg.wait_for_selector("#doc-text h1")
+    check("selection opens picture and document viewers without tabs",
+          await pg.inner_text("#doc-text h1") == "Knight Armour")
+    await pg.screenshot(path=str(out / "37-contents-view.png"))
+    await pg.goto(B + "#/import")
+
+
 async def model_file_panel_checks(pg):
     """Package A: panel layout, persisted controls, selection and mobile drawer."""
     await pg.goto(B + "#/browse/unsorted")
@@ -1466,6 +1529,7 @@ async def main():
             await import_follow_ups(pg)
             await model_workspace_selection(pg)
             await model_file_panel_checks(pg)
+            await workspace_contents(pg)
 
             # 3. renaming the library
             await pg.click('.sidebar a[href="#/settings"]')

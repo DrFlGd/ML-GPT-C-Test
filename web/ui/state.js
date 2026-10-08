@@ -26,7 +26,10 @@ export const ui = createStore({
   jobs: [],                // [{ id, label, started, cancel }]
   theme: "system",
   navOpen: false,          // sidebar drawer on small screens
-  partsView: "folders",    // a model's files: folders | all | type | grid
+  filePanelOpen: true,     // model file panel collapsed or expanded
+  filePanelWidth: 300,     // width in pixels (220..480)
+  filePanelView: "folders",// folders | all | type (Grid belongs to the viewer)
+  partsView: "folders",    // Import's compact file views remain unchanged
   sortView: "folders",     // the sorting workspace: folders | list | grid | category
 });
 
@@ -37,14 +40,14 @@ const LAYOUT_KEY = "ml-ui";
 export function initState(store) {
   prefs = store.prefs;
   const saved = prefs.get(LAYOUT_KEY, {}) || {};
-  ui.set({ favs: prefs.get("ml-favs", []) || [], theme: saved.theme || "system", sort: saved.sort || "name", layout: saved.layout || "grid", open: saved.open || {}, partsView: saved.partsView || "folders", sortView: saved.sortView || "folders" });
+  ui.set({ favs: prefs.get("ml-favs", []) || [], theme: saved.theme || "system", sort: saved.sort || "name", layout: saved.layout || "grid", open: saved.open || {}, filePanelOpen: saved.filePanelOpen !== false, filePanelWidth: Math.max(220, Math.min(480, Number(saved.filePanelWidth) || 300)), filePanelView: ["folders", "all", "type"].includes(saved.filePanelView) ? saved.filePanelView : "folders", partsView: saved.partsView || "folders", sortView: saved.sortView || "folders" });
   applyTheme();
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyTheme);
 }
 
 function savePrefs() {
   const s = ui.get();
-  prefs?.set(LAYOUT_KEY, { theme: s.theme, sort: s.sort, layout: s.layout, open: s.open, partsView: s.partsView, sortView: s.sortView });
+  prefs?.set(LAYOUT_KEY, { theme: s.theme, sort: s.sort, layout: s.layout, open: s.open, filePanelOpen: s.filePanelOpen, filePanelWidth: s.filePanelWidth, filePanelView: s.filePanelView, partsView: s.partsView, sortView: s.sortView });
 }
 
 export function setPref(patch) {

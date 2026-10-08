@@ -4,10 +4,10 @@ import { html, useEffect, useRef, useState } from "../lib/html.js";
 import { useStore } from "../lib/store.js";
 import { ui, setPref } from "./state.js";
 import { Icon } from "./icons.js";
-import { PartsViews, variantsIn, inVariant, makeFileTree, fileMenu } from "./parts.js";
+import { PartsViews, variantsIn, inVariant } from "./parts.js";
 import { ViewSwitch } from "./layout.js";
 import { size } from "./details.js";
-import { fileSel, pick, clear, fileSelectionKey } from "./filesel.js";
+import { fileSel, pick, fileSelectionKey } from "./filesel.js";
 
 const PANEL_VIEWS = [["folders", "Folders", "folder"], ["all", "List", "list"], ["type", "By type", "grouped"]];
 const clamp = (n) => Math.min(480, Math.max(220, n));
@@ -31,6 +31,7 @@ export function FilePanel({ src, files, names, variant, onVariant, open, onOpen,
     onPick?.();
   };
   const keys = (e) => {
+    if (e.target.closest?.("input, textarea, select, [contenteditable=true]")) return;
     if (["Escape", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)
       || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a")) {
       if (fileSelectionKey(e, order())) { e.preventDefault(); e.stopPropagation(); }

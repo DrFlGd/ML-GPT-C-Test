@@ -19,6 +19,7 @@ import { ViewSwitch, SortMenu } from "./layout.js";
 import { size } from "./details.js";
 import { openMenu, typing } from "./actions.js";
 import { TypeTag } from "./filetypes.js";
+import { fileSel, pick, setArchiveEntries } from "./filesel.js";
 
 export const MESH = /\.(stl|obj|3mf)$/i;
 const MD = /\.(md|markdown|txt)$/i;
@@ -63,7 +64,7 @@ export const inVariant = (rel, variant, names) => {
 };
 
 /** Files as a tree: { name, path, dirs: Map, files: [] }. */
-function tree(files) {
+export function makeFileTree(files) {
   const root = { name: "", path: "", dirs: new Map(), files: [] };
   for (const f of files) {
     const parts = f.rel.split("/");
@@ -133,7 +134,7 @@ const ownApp = (src) => src.kind === "model" && isDesktop();
 const NO_VIEW = "This app has no viewer for this kind of file";
 
 /** A file's right-click menu: open it in its own app, show it in its folder, use it as the cover. */
-function fileMenu(e, src, f, open) {
+export function fileMenu(e, src, f, open) {
   const t = target(f);
   const lib = ui.get().library;
   const dir = f.rel.includes("/") ? f.rel.slice(0, f.rel.lastIndexOf("/")) : "";
@@ -285,12 +286,148 @@ function FileGrid({ files, src, open, current }) {
 const VIEWS = [["folders", "Folders", "folder"], ["all", "List", "list"], ["type", "By type", "grouped"], ["grid", "Grid", "grid"]];
 const FILE_SORTS = [["folder", "Folder"], ["name", "Name"], ["size", "Largest first"], ["kind", "Kind"]];
 
+/** Model-only navigator rows: Import keeps the same shared PartsViews API and
+ * existing compact presentation. Both modes use makeFileTree and TypeTag. */
+function PanelZipNode({ node, archive, selected, select }) {
+  const [expanded, setExpanded] = useState(true);
+  const dirs = [...node.dirs.values()].sort((a, b) => a.name.localeCompare(b.name));
+  return html`${dirs.map((d) => {
+    const key = `z:${archive}!${d.path}/`;
+    return html`<li class="tree-dir" key=${key}>
+      <div class="file-panel-row">
+        <button type="button" class="file-panel-twisty" aria-label=${expanded ? "Collapse folder" : "Expand folder"} aria-expanded=${expanded}
+          onClick=${() => setExpanded(!expanded)}>${Icon.chevron(12)}</button>
+        <button type="button" data-filekey=${key} class=${`tree-btn${selected.picked.includes(key) ? " on" : ""}`}
+          aria-selected=${selected.picked.includes(key)} onClick=${(e) => select(e, key)}>${Icon.folder(13)} ${d.name}</button>
+      </div>
+      ${expanded ? html`<ul class="tree"><${PanelZipNode} node=${d} archive=${archive} selected=${selected} select=${select} /></ul>` : null}
+    </li>`;
+  })}
+  ${node.files.map((f) => {
+    const key = `z:${archive}!${f.rel}`;
+    return html`<li class="tree-file in-zip" key=${key}><button type="button" data-filekey=${key}
+      class=${`tree-btn${selected.picked.includes(key) ? " on" : ""}`} aria-selected=${selected.picked.includes(key)}
+      onClick=${(e) => select(e, key)}><span class="tree-icon tree-type"><${TypeTag} name=${f.rel} /></span>
+      <span class="tree-name">${f.name}</span><span class="tree-size muted">${size(f.size || 0)}</span></button></li>`;
+  })}`;
+}
+
+function PanelZip({ src, f, selected, select }) {
+  const [entries, setEntries] = useState(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let live = true;
+    setEntries(null);
+    setError("");
+    api("model_zip", { ...srcArgs(src), file: f.rel }).then((list) => {
+      if (!live) return;
+      setArchiveEntries(f.rel, list);
+      setEntries(list.map((e) => ({ ...e, rel: e.name })));
+    }, (e) => { if (live) setError(e.message || String(e)); });
+    return () => { live = false; };
+  }, [src.id, f.rel]);
+  if (error) return html`<p class="tree-note form-error">${error}</p>`;
+  if (!entries) return html`<p class="tree-note muted">Reading archive…</p>`;
+  return html`<ul class="tree"><${PanelZipNode} node=${makeFileTree(entries)} archive=${f.rel}
+    selected=${selected} select=${select} /></ul>`;
+}
+
+function PanelFileRow({ src, f, selected, select, folder = "" }) {
+  const [zipOpen, setZipOpen] = useState(false);
+  const key = `f:${f.rel}`;
+  const zipped = /\.zip$/i.test(f.rel);
+  const name = f.rel.split("/").pop();
+  const open = (t) => pick(`f:${t.file}`);
+  return html`<li class="tree-file" key=${key}>
+    <div class="file-panel-row">
+      ${zipped ? html`<button type="button" class=${`file-panel-twisty${zipOpen ? " opened" : ""}`}
+        aria-label=${zipOpen ? "Collapse archive" : "Expand archive"} aria-expanded=${zipOpen}
+        onClick=${() => setZipOpen(!zipOpen)}>${Icon.chevron(12)}</button>` : null}
+      <button type="button" class=${`tree-btn${selected.picked.includes(key) ? " on" : ""}`} data-filekey=${key}
+        aria-selected=${selected.picked.includes(key)} title=${f.rel} onClick=${(e) => select(e, key)}
+        onContextMenu=${(e) => { if (!selected.picked.includes(key)) pick(key); fileMenu(e, src, f, open); }}>
+        <span class="tree-icon tree-type"><${TypeTag} name=${f.rel} /></span>
+        <span class="tree-name">${name}${folder ? html`<small class="tree-folder muted">${folder}</small>` : null}</span>
+        <span class="tree-size muted">${size(f.size || 0)}</span>
+      </button>
+    </div>
+    ${zipped && zipOpen ? html`<${PanelZip} src=${src} f=${f} selected=${selected} select=${select} />` : null}
+  </li>`;
+}
+
+function PanelNode({ node, src, names, selected, select, depth = 0 }) {
+  const [expanded, setExpanded] = useState({});
+  const dirs = [...node.dirs.values()].sort((a, b) => a.name.localeCompare(b.name));
+  return html`${dirs.map((d) => {
+    const key = `d:${d.path}`;
+    const opened = expanded[d.path] ?? depth < 2;
+    return html`<li class="tree-dir" key=${d.path}>
+      <div class="file-panel-row">
+        <button type="button" class=${`file-panel-twisty${opened ? " opened" : ""}`}
+          aria-label=${opened ? "Collapse folder" : "Expand folder"} aria-expanded=${opened}
+          onClick=${() => setExpanded({ ...expanded, [d.path]: !opened })}>${Icon.chevron(12)}</button>
+        <button type="button" data-filekey=${key} class=${`tree-btn${selected.picked.includes(key) ? " on" : ""}`}
+          aria-selected=${selected.picked.includes(key)} onClick=${(e) => select(e, key)}>
+          <span class="tree-icon">${Icon.folder(13)}</span><span class="tree-name">${d.name}</span>
+          ${isVariant(d.name, names) ? html`<span class="badge">variant</span>` : null}
+        </button>
+      </div>
+      ${opened ? html`<ul class="tree"><${PanelNode} key=${d.path} node=${d} src=${src} names=${names}
+        selected=${selected} select=${select} depth=${depth + 1} /></ul>` : null}
+    </li>`;
+  })}
+  ${node.files.map((f) => html`<${PanelFileRow} key=${f.rel} f=${f} src=${src} selected=${selected} select=${select} />`)}`;
+}
+
+function PanelAll({ files, src, selected, select }) {
+  const [by, setBy] = useState("name");
+  const order = [...files].sort((a, b) => by === "size" ? (b.size - a.size || a.rel.localeCompare(b.rel))
+    : by === "type" ? (a.kind.localeCompare(b.kind) || a.rel.localeCompare(b.rel))
+    : a.rel.localeCompare(b.rel));
+  return html`<div class="panel-all">
+    <div class="file-panel-list-head">
+      <button type="button" aria-pressed=${by === "name"} onClick=${() => setBy("name")}>Name</button>
+      <button type="button" aria-pressed=${by === "type"} onClick=${() => setBy("type")}>Type</button>
+      <button type="button" aria-pressed=${by === "size"} onClick=${() => setBy("size")}>Size</button>
+    </div>
+    <ul class="tree flat">${order.map((f) => html`<${PanelFileRow} key=${f.rel} src=${src} f=${f} selected=${selected} select=${select}
+      folder=${f.rel.includes("/") ? f.rel.slice(0, f.rel.lastIndexOf("/")) : ""} />`)}</ul>
+  </div>`;
+}
+
+function PanelByType({ files, src, selected, select }) {
+  return html`<div class="by-type">${TYPES.map(([kind, label]) => {
+    const list = files.filter((f) => f.kind === kind);
+    if (!list.length) return null;
+    return html`<section class="type-group" data-kind=${kind} key=${kind}>
+      <h4>${label} <span class="muted">${list.length}</span></h4>
+      <ul class="tree flat">${list.map((f) => html`<${PanelFileRow} key=${f.rel} src=${src} f=${f}
+        selected=${selected} select=${select} />`)}</ul>
+    </section>`;
+  })}</div>`;
+}
+
+
 /** A model's files in the view chosen last (Folders, All files, By type, Grid). */
-export function PartsViews({ src, files, names, open, current, treeKey }) {
-  const view = useStore(ui, (s) => s.partsView || "folders");
+export function PartsViews({ src, files, names, open, current, treeKey, panel = false, selected, select, view: panelView }) {
+  const savedView = useStore(ui, (s) => s.partsView || "folders");
+  const view = panel ? panelView : savedView;
+  if (panel) return html`<div class="parts file-panel-parts">
+    ${view === "folders" ? html`<ul class="tree" id="file-panel-tree">
+      <li class="tree-dir"><button type="button" class=${`tree-btn${selected.picked.includes("d:") ? " on" : ""}`}
+        data-filekey="d:" aria-selected=${selected.picked.includes("d:")} onClick=${(e) => select(e, "d:")}>
+        ${Icon.folder(13)}<span class="tree-name">${src.rel.split("/").pop()}</span>
+      </button></li>
+      <${PanelNode} node=${makeFileTree(files)} src=${src} names=${names} selected=${selected}
+        select=${select} />
+    </ul>` : null}
+    ${view === "all" ? html`<${PanelAll} files=${files} src=${src} selected=${selected} select=${select} />` : null}
+    ${view === "type" ? html`<${PanelByType} files=${files} src=${src} selected=${selected} select=${select} />` : null}
+  </div>`;
+
   return html`<div class="parts">
     <${ViewSwitch} id="parts-views" label="Show the files as" views=${VIEWS} value=${view} onChange=${(k) => setPref({ partsView: k })} />
-    ${view === "folders" ? html`<ul class="tree" id="part-tree"><${TreeNode} node=${tree(files)} src=${src} open=${open} current=${current} depth=${0} names=${names} key=${treeKey} /></ul>` : null}
+    ${view === "folders" ? html`<ul class="tree" id="part-tree"><${TreeNode} node=${makeFileTree(files)} src=${src} open=${open} current=${current} depth=${0} names=${names} key=${treeKey} /></ul>` : null}
     ${view === "all" ? html`<${AllFiles} files=${files} src=${src} open=${open} current=${current} />` : null}
     ${view === "type" ? html`<${ByType} files=${files} src=${src} open=${open} current=${current} />` : null}
     ${view === "grid" ? html`<${FileGrid} files=${files} src=${src} open=${open} current=${current} />` : null}

@@ -745,3 +745,78 @@ body:has(.sw-go) .toast { bottom: 92px; }
 .sw-level { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin: 0; font-size: 13px; }
 .sw-crumbs { min-width: 0; overflow-wrap: anywhere; }
 .sw-crumb { font-size: 13px; }
+
+
+/* ---------- Model workspace A: file panel and three-column page ---------- */
+/* The existing app sidebar is the first column; this panel and stage follow it. */
+.workspace-model-page { overflow: hidden; padding-bottom: 12px; }
+.model-workspace { display: flex; flex: 1; min-height: 0; min-width: 0; gap: 0; border: 1px solid var(--steel-2); border-radius: var(--radius-m); background: var(--white); }
+.file-panel-holder { flex: 0 0 auto; width: fit-content; min-width: 0; position: relative; }
+.file-panel { --file-panel-width: 300px; box-sizing: border-box; position: relative; display: flex;
+  flex-direction: column; width: var(--file-panel-width); height: 100%; min-height: 0;
+  border-right: 1px solid var(--steel-2); background: var(--panel); }
+.file-panel.collapsed { width: 36px; }
+.file-panel-rail { display: flex; align-items: flex-start; justify-content: center; padding: 8px 0; }
+.file-panel-rail button { padding: 5px; background: transparent; border: 0; color: var(--ink); }
+.file-panel-inner { display: flex; flex-direction: column; min-height: 0; width: 100%; height: 100%; }
+.file-panel-head { display: flex; align-items: center; gap: 6px; padding: 10px 8px 6px 12px; }
+.file-panel-title { display: flex; flex: 1; flex-wrap: wrap; align-items: baseline; gap: 3px 8px; min-width: 0; }
+.file-panel-title .muted { font-size: 11px; }
+.file-panel-collapse { padding: 3px 5px; }
+.file-panel-drawer-close { display: none; }
+.file-panel-variants { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 8px 9px; }
+.file-panel-variants button { padding: 4px 7px; font-size: 12px; border: 1px solid var(--steel-2); background: var(--white); border-radius: var(--radius-s); }
+.file-panel-variants button[aria-pressed="true"] { background: var(--sel); border-color: var(--focus); }
+#file-panel-search { display: block; box-sizing: border-box; width: calc(100% - 16px); margin: 0 8px 8px; font-size: 13px; padding: 7px 9px; }
+#file-panel-views { display: flex; margin: 0 8px 8px; align-self: flex-start; max-width: calc(100% - 16px); }
+#file-panel-views button { gap: 4px; padding: 5px 7px; font-size: 12px; }
+#file-panel-views .view-label { display: inline; }
+.file-panel-scroll { flex: 1; min-height: 0; overflow: auto; padding: 4px 6px; background: var(--white); }
+.file-panel-foot { border-top: 1px solid var(--steel-2); padding: 7px 10px; font-size: 11.5px; }
+.file-panel-resizer { width: 8px; cursor: col-resize; position: absolute; right: -4px; top: 0; bottom: 0; z-index: 2; touch-action: none; }
+.file-panel-resizer:hover, .file-panel-resizer:active { background: color-mix(in srgb, var(--focus) 25%, transparent); }
+.file-panel-row { display: flex; align-items: stretch; min-width: 0; }
+.file-panel-parts .tree-dir > .file-panel-row .tree-icon, .file-panel-parts .tree-dir > .file-panel-row > .tree-btn > svg, #file-panel-tree > .tree-dir > .tree-btn > svg { color: #c98a00; }
+:root[data-theme='dark'] .file-panel-parts .tree-dir > .file-panel-row .tree-icon { color: #f2b705; }
+.file-panel-row > .tree-btn { display: flex; flex: 1; align-items: center; min-width: 0; }
+.file-panel-row > .tree-btn[aria-selected="true"], .file-panel-parts > .tree > li > .tree-btn[aria-selected="true"] { box-shadow: inset 3px 0 0 var(--tool); }
+.file-panel-twisty { display: flex; align-items: center; justify-content: center; flex: 0 0 18px;
+  padding: 0; border: 0; background: transparent; color: var(--graphite); }
+.file-panel-twisty.opened svg { transform: rotate(90deg); }
+.file-panel-parts .tree { padding-left: 13px; gap: 1px; }
+#file-panel-tree { padding-left: 0; }
+.file-panel-parts .tree-file { min-width: 0; }
+.file-panel-parts .tree-btn { display: flex; align-items: center; font-size: 12.5px; min-height: 29px; white-space: normal; }
+.file-panel-parts .tree-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.file-panel-parts .tree-size { font-size: 10.5px; }
+.file-panel-parts .type-group h4 { padding: 3px 6px; font-size: 12px; }
+.file-panel-list-head { display: flex; justify-content: space-between; border-bottom: 1px solid var(--steel-2); padding: 3px 0; }
+.file-panel-list-head button { background: transparent; border: 0; font-weight: 600; font-size: 12px; padding: 5px; color: var(--graphite); }
+.file-panel-list-head button[aria-pressed="true"] { color: var(--ink); text-decoration: underline; }
+.workspace-stage { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.workspace-viewer { min-width: 0; }
+.workspace-viewer .stage-canvas, .workspace-viewer .stage-picture { height: min(65vh, 680px); }
+.workspace-stage-note { min-height: 220px; background: var(--panel); border: 1px solid var(--steel-2);
+  border-radius: var(--radius-m); display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 10px; padding: 22px; text-align: center; overflow-wrap: anywhere; }
+.workspace-stage-note .stage-note-title { font-size: 18px; font-weight: 700; }
+.workspace-stage-note p { margin: 0; font-size: 13.5px; color: var(--graphite); }
+.workspace-files-button { display: none; }
+.file-panel-backdrop { display: none; }
+
+@media (max-width: 899px) {
+  .workspace-model-page { overflow: auto; }
+  .workspace-files-button { display: inline-flex; }
+  .file-panel-holder { position: static; flex: 0 0 0; width: 0; }
+  .file-panel { position: fixed; z-index: 61; top: 0; bottom: 0; left: 0;
+    width: min(340px, 88vw) !important; height: 100dvh; max-height: none;
+    transform: translateX(-110%); transition: transform .18s ease; box-shadow: var(--shadow); }
+  .file-panel.drawer-open { transform: translateX(0); }
+  .file-panel.collapsed { width: min(340px, 88vw); }
+  .file-panel-resizer, .file-panel-rail, .file-panel-collapse { display: none; }
+  .file-panel-drawer-close { display: inline-flex; padding: 4px; }
+  .file-panel-backdrop { display: block; position: fixed; inset: 0; z-index: 60;
+    border: 0; background: rgba(0,0,0,.38); }
+  .workspace-stage { padding: 8px; }
+  .workspace-model-page .page-head .page-actions { flex-wrap: wrap; }
+}

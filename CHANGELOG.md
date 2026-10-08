@@ -65,6 +65,8 @@ The UI pass in `docs/PLAN.md` ("UI pass design") is done: actions (0.5.1), undo 
 
 ## Unreleased
 
+- **Model workspace (Package A):** the model page has a resizable, collapsible file panel on the left of the viewing area, with variants, search, folders, sortable list, By type, nested ZIP entries, shared file selection and a Files drawer under 900 px. Panel width, open state and view are saved; `[` toggles it. The existing viewers follow selection, with folder/ZIP contents tiles reserved for Package B. Import's compact layout is unchanged. Added browser checks and updated previous model-page acceptance tests.
+
 - **Model workspace (selection foundation):** shared file selection (`web/ui/filesel.js`) now tracks the model, currently displayed row, multi-selection and range anchor; supports folders, files, ZIP entries, Ctrl/Cmd and Shift selections, arrows, Ctrl+A and Esc. `pickedFiles()` prepares deduplicated paths for the future extract command. Added Node unit tests and a browser acceptance check. The existing model page and Import interface are unchanged.
 
 ## 0.5.4 (2026-10-07)

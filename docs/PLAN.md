@@ -603,3 +603,36 @@ Built as designed, with these details:
 - **Dropping:** `web/ui/drop.js`. The desktop platform's `onDrop(cb, over)` listens to Tauri's `tauri://drag-enter`, `drag-leave` and `drag-drop` (the drop's position comes in physical pixels and is divided by `devicePixelRatio`). The menu is the shared one, which now takes `{ head }` and a `sub` line on an item. Adding goes `sort_add` (each one a model) → `sort_group` (as one model) → `sort_send` → `sort_commit` with `forget: true`, which takes those models and their roots off Import's list once they're in, so a drop leaves the workspace as it was. `sort_paths` says whether each dropped path is a folder. A path inside a folder already on Import isn't added twice: the message says to give it a category there.
 - **File types:** `web/ui/filetypes.js` (`TypeTag`, `TypeTags`, `fileType`). The tag replaces the kind icon in every file list (a model's folders, list and by-type views, ZIP entries, the grid's tiles, the details panel's files) and marks loose files on Import; a model's row shows the tags of what it holds from the summary's new `exts`. Archives were shown with the folder icon before; they have their own now, and folders are amber.
 - Tests: `import_follow_ups` in `desktop_page.py` (checks 51 to 55) with drops sent through the test shim's `__shimEmit`, and `makes_every_folder_at_a_level_a_model` in the core. 63 page checks in all.
+
+
+## Model workspace redesign — implementation notes (October 2026, test repository)
+
+The owner's 7 October *Model page and file workspace: requirements* document is the
+design source for Packages A–F. Phase 1 established the common selection contract
+in `web/ui/filesel.js`: `{src, shown, picked, anchor}`, keys `d:`/`f:`/`z:`
+and `pickedFiles()`, without changing the current page. Work stays on isolated
+branches in `DrFlGd/ML-GPT-C-Test`; the original library remains untouched.
+
+### Package A: left file panel and three-column shell
+
+- `web/ui/modelpage.js` keeps the model header but arranges the app sidebar,
+  file panel and selected-file viewer left to right.
+- `web/ui/filepanel.js` provides a 300 px default panel (220–480 px drag range),
+  collapse to 36 px, the `[` shortcut, saved width/open/view preferences, file
+  name search, variants and responsive Files drawer below 900 px.
+- `PartsViews` in `web/ui/parts.js` retains Import's existing compact mode,
+  with an additional model-panel mode for the root folder, nested folders,
+  file rows, ZIP entries, sortable list and By type view. The shared TypeTag
+  and menu actions are kept.
+- `WorkspaceStage` temporarily maps selection keys to the existing 3D, picture,
+  document and video viewers. **Folder and ZIP contents tiles, breadcrumb,
+  arrow stepping in the viewer and grid/list switch belong to Package B.**
+  Until then, folders and archives show a placeholder, although entries can be
+  unfolded in the file panel.
+- Browser acceptance checks cover the new layout, persistence, variant filter,
+  archive selections, responsive drawer and Import separation. Full desktop
+  and cross-platform CI validation remains required before a release.
+
+This package deliberately makes no Rust/core, extraction, Import-workspace or
+original-repository changes. Package B will move the viewer implementations
+out of `parts.js` to `stage.js` and introduce `contents.js`.

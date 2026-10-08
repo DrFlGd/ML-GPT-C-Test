@@ -34,7 +34,14 @@ export function FilePanel({ src, files, names, variant, onVariant, open, onOpen,
     if (e.target.closest?.("input, textarea, select, [contenteditable=true]")) return;
     if (["Escape", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)
       || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a")) {
-      if (fileSelectionKey(e, order())) { e.preventDefault(); e.stopPropagation(); }
+      if (fileSelectionKey(e, order())) {
+        e.preventDefault(); e.stopPropagation();
+        if (e.key.startsWith("Arrow")) {
+          const key = fileSel.get().shown;
+          [...(ref.current?.querySelectorAll("[data-filekey]") || [])]
+            .find((el) => el.dataset.filekey === key)?.focus({ preventScroll: false });
+        }
+      }
     }
   };
   const resize = (e) => {

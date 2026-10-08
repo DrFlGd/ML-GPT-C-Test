@@ -7,7 +7,8 @@ import { useStore } from "../lib/store.js";
 import { ui, setPref } from "./state.js";
 import { routeHash } from "./context.js";
 import { api, toast } from "./library.js";
-import { WorkspaceStage, variantsIn, inVariant } from "./parts.js";
+import { variantsIn, inVariant } from "./parts.js";
+import { Stage } from "./stage.js";
 import { FilePanel } from "./filepanel.js";
 import { setFileSource, pick, clear } from "./filesel.js";
 import { ActionRow, MODEL_ACTIONS, usePageKeys, runKey, letter, editDetails, writable } from "./actions.js";
@@ -73,7 +74,7 @@ export function ModelPage({ id }) {
         onVariant=${changeVariant} open=${panelOpen} onOpen=${(value) => setPref({ filePanelOpen: value })}
         drawerOpen=${drawerOpen} onDrawerOpen=${setDrawerOpen} onPick=${() => setDrawerOpen(false)} />
       <main class="workspace-stage" id="workspace-stage">
-        <${WorkspaceStage} src=${src} files=${m.files_list} model=${m} names=${s.names} variant=${variant} />
+        <${Stage} src=${src} files=${m.files_list} model=${m} names=${s.names} variant=${variant} />
         ${m.details?.notes ? html`<div class="insp-section"><h3>Notes</h3><p class="insp-note">${m.details.notes}</p></div>` : null}
       </main>
     </div>

@@ -469,7 +469,7 @@ export function PartsViews({ src, files, names, open, current, treeKey, panel = 
   </div>`;
 }
 
-function Stage3D({ src, model, current, onInfo }) {
+export function Stage3D({ src, model, current, onInfo }) {
   const canvas = useRef(null);
   const viewer = useRef(null);
   const [state, setState] = useState({ busy: false, error: "", info: null });
@@ -517,7 +517,7 @@ function Stage3D({ src, model, current, onInfo }) {
   </div>`;
 }
 
-function Pictures({ src, model, pictures, current, setCurrent }) {
+export function Pictures({ src, model, pictures, current, setCurrent }) {
   const [url, setUrl] = useState(null);
   const pic = current || pictures[0];
   useEffect(() => {
@@ -571,7 +571,7 @@ function followLink(e) {
   if (/^https?:\/\//i.test(href)) window.open(href, "_blank", "noopener");
 }
 
-function Documents({ src, model, docs, current, setCurrent }) {
+export function Documents({ src, model, docs, current, setCurrent }) {
   const doc = current || docs[0];
   const [text, setText] = useState(null);
   useEffect(() => {
@@ -595,7 +595,7 @@ function Documents({ src, model, docs, current, setCurrent }) {
   </div>`;
 }
 
-function Videos({ src, model, videos, current, setCurrent }) {
+export function Videos({ src, model, videos, current, setCurrent }) {
   const v = current || videos[0];
   if (!v) return html`<div class="stage-note muted">No videos.</div>`;
   return html`<div class="stage-videos">
@@ -649,52 +649,3 @@ export function FilesView({ src, files: allFiles, main, model, names, compact, s
 }
 
 
-/** Transitional model-page viewer for Package A. Package B replaces folder and
- * ZIP placeholders with contents tiles, while reusing these existing viewers.
- * Import continues to call FilesView unchanged. */
-export function WorkspaceStage({ src, files, model, names, variant }) {
-  const selection = useStore(fileSel, (s) => ({ shown: s.shown, model: s.src?.id }));
-  const chosen = variant === undefined ? variantsIn(files, names)[0] || null : variant;
-  const shown = selection.model === src.id ? selection.shown : null;
-  if (!shown) return html`<div class="workspace-stage-note">Choose a file to view.</div>`;
-  if (shown.startsWith("d:")) {
-    return html`<div class="workspace-stage-note" id="workspace-folder-placeholder">
-      <span class="stage-note-title">${shown === "d:" ? model.name : shown.slice(2)}</span>
-      <p>This folder is selected. Its contents view is coming in the next phase.</p>
-    </div>`;
-  }
-  let rel, entry = null;
-  if (shown.startsWith("z:")) {
-    const value = shown.slice(2);
-    const parent = files.filter((f) => /\.zip$/i.test(f.rel) && value.startsWith(`${f.rel}!`))
-      .sort((a, b) => b.rel.length - a.rel.length)[0];
-    if (!parent) return html`<div class="workspace-stage-note">Archive entry not found.</div>`;
-    rel = parent.rel;
-    entry = value.slice(rel.length + 1);
-    if (entry.endsWith("/")) return html`<div class="workspace-stage-note">${entry}</div>`;
-  } else if (shown.startsWith("f:")) rel = shown.slice(2);
-  else return null;
-  const f = files.find((row) => row.rel === rel);
-  if (!f || !inVariant(rel, chosen, names)) {
-    return html`<div class="workspace-stage-note">Choose a file in this variant.</div>`;
-  }
-  const label = entry || rel;
-  const targetFile = { file: rel, entry };
-  if (MESH.test(label)) return html`<section class="workspace-viewer"><${Stage3D} key="model-stage" src=${src} model=${model} current=${targetFile} /></section>`;
-  if (PICTURE.test(label)) return html`<section class="workspace-viewer">
-    <${Pictures} src=${src} model=${model} pictures=${[targetFile]} current=${targetFile}
-      setCurrent=${() => {}} />
-  </section>`;
-  if (!entry && f.kind === "doc") return html`<section class="workspace-viewer">
-    <${Documents} src=${src} model=${model} docs=${[targetFile]} current=${targetFile} setCurrent=${() => {}} />
-  </section>`;
-  if (!entry && f.kind === "video") return html`<section class="workspace-viewer">
-    <${Videos} src=${src} model=${model} videos=${[targetFile]} current=${targetFile} setCurrent=${() => {}} />
-  </section>`;
-  const archive = /\.zip$/i.test(rel);
-  return html`<div class="workspace-stage-note" id="workspace-file-fallback">
-    <span class="stage-note-title">${label}</span>
-    <p>${archive ? "Open the archive in the file panel to browse its entries. Its contents view is coming in the next phase." : "There is no built-in viewer for this file."}</p>
-    ${ownApp(src) && !entry ? html`<button type="button" class="ghost" onClick=${() => openModelFile(model, rel)}>${Icon.external(14)} Open in its own app</button>` : null}
-  </div>`;
-}

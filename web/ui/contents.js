@@ -191,7 +191,7 @@ export function Contents({ src, files, folder = "", archive = null }) {
   const onKey = (e) => {
     if (typing(e) || e.altKey || (e.target.closest?.("input, textarea, select"))) return;
     if (e.key === "Backspace") { e.preventDefault(); e.stopPropagation(); navigate(parentKey(archive
-      ? `z:${archive}!${folder || ""}` : `d:${folder}`, files)); return; }
+      ? (folder ? `z:${archive}!${folder}` : `f:${archive}`) : `d:${folder}`, files)); return; }
     if (e.key === "Enter") {
       const key = fileSel.get().shown;
       if (order.includes(key)) { e.preventDefault(); navigate(key); }

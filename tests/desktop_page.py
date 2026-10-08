@@ -467,15 +467,15 @@ async def phase3(pg):
     size_text = await pg.inner_text("#viewer-size") if await pg.locator("#viewer-size").count() else await pg.inner_text(".stage-3d .form-error")
     shown = await pg.inner_text("#viewer-file")
     variants = await pg.eval_on_selector_all("#variants button", "els => els.map(e => e.textContent + (e.getAttribute('aria-pressed') === 'true' ? '*' : ''))")
-    dirs = await pg.eval_on_selector_all("#part-tree [data-dir]", "els => els.map(e => e.dataset.dir)")
+    dirs = await pg.eval_on_selector_all("#file-panel-tree [data-filekey^="d:"]", "els => els.map(e => e.dataset.filekey.slice(2)).filter(Boolean)")
     await pg.screenshot(path=str(out / "12-model-page.png"))
     check("a model opens on its own page with a 3D view, parts and variants", "20.0 × 20.0 × 20.0 mm" in size_text and shown == "Presupported/Helmet/helmet.stl"
           and variants == ["Presupported*", "Unsupported", "All"] and dirs == ["Presupported", "Presupported/Arms", "Presupported/Helmet"], (size_text, shown, variants, dirs))
-    await pg.click("#part-tree [data-file='Presupported/Arms/arm.stl']")
+    await pg.click("#file-panel-tree [data-filekey='f:Presupported/Arms/arm.stl']")
     await pg.wait_for_function("() => document.querySelector('#viewer-size')?.textContent.startsWith('8.0')")
     await pg.click("#variants button:text-is('Unsupported')")
     await pg.wait_for_function("() => document.querySelector('#viewer-file')?.textContent === 'Unsupported/Helmet/helmet.stl'")
-    dirs = await pg.eval_on_selector_all("#part-tree [data-dir]", "els => els.map(e => e.dataset.dir)")
+    dirs = await pg.eval_on_selector_all("#file-panel-tree [data-filekey^="d:"]", "els => els.map(e => e.dataset.filekey.slice(2)).filter(Boolean)")
     check("the variant switch shows that variant's parts", dirs == ["Unsupported", "Unsupported/Helmet"], dirs)
 
     # 20b. variant names are set in Settings: Resin and FDM folders become a switch
@@ -499,10 +499,10 @@ async def phase3(pg):
     await pg.click("#variants button:text-is('Unsupported')")
 
     # 21. a ZIP's entries open from inside it
-    await pg.click("#part-tree [data-file='extras.zip']")
-    await pg.wait_for_selector("#part-tree [data-entry]")
-    entries = await pg.eval_on_selector_all("#part-tree [data-entry]", "els => els.map(e => e.dataset.entry)")
-    await pg.click("#part-tree [data-entry='Extras/shield.stl']")
+    await pg.locator("#file-panel-tree [data-filekey='f:extras.zip']").locator("..").locator(".file-panel-twisty").click()
+    await pg.wait_for_selector("#file-panel-tree [data-filekey='z:extras.zip!Extras/shield.stl']")
+    entries = await pg.eval_on_selector_all("#file-panel-tree [data-filekey^='z:extras.zip!'][data-filekey$='.stl']", "els => els.map(e => e.dataset.filekey.split('!').slice(1).join('!'))")
+    await pg.click("#file-panel-tree [data-filekey='z:extras.zip!Extras/shield.stl']")
     await pg.wait_for_function("() => document.querySelector('#viewer-file')?.textContent === 'extras.zip › Extras/shield.stl' && document.querySelector('#viewer-size')?.textContent.startsWith('15.0')")
     check("a ZIP's parts are listed and shown without unzipping", entries == ["Extras/shield.stl"] and (dest / "extras.zip").is_file(), entries)
 
@@ -511,42 +511,35 @@ async def phase3(pg):
     await pg.wait_for_function("() => document.querySelector('.toast')?.textContent.includes('cover')")
     side = json.loads((dest / "model.json").read_text())
     snap = (dest / "_media/cover.png").read_bytes()[:4] == b"\x89PNG" if (dest / "_media/cover.png").exists() else False
-    await pg.click("[data-tab=docs]")
+    await pg.click("#file-panel-tree [data-filekey='f:README.md']")
     await pg.wait_for_selector("#doc-text h1")
     doc = await pg.inner_html("#doc-text")
     pwned = await pg.evaluate("() => window.__pwned || 0")
     await pg.screenshot(path=str(out / "13-readme.png"))
-    await pg.click("[data-tab=pictures]")
+    await pg.click("#file-panel-tree [data-filekey='f:photo.png']")
     await pg.wait_for_selector("#picture-big")
-    await pg.click(".strip-btn[data-file='photo.png']")
     await pg.click("#picture-cover")
     await pg.wait_for_function("() => document.querySelector('#picture-cover')?.disabled")
     side2 = json.loads((dest / "model.json").read_text())
     check("a view or a picture becomes the cover; readmes show without scripts", snap and side["cover"] == "_media/cover.png" and side2["cover"] == "photo.png"
           and "<strong>0.12 mm</strong>" in doc and "<script" not in doc and 'href="javascript' not in doc and not pwned, (side.get("cover"), side2.get("cover"), doc[:200], pwned))
 
-    # 22b. the model's files in other views: all files, by type, a grid of previews
-    await pg.click('[data-tab="3d"]')
-    await pg.click("#variants button:text-is('All')")  # the variant switch picks the files every view shows
+    # 22b. the model's file panel has folders, a sortable list and by-type view
+    await pg.click("#variants button:text-is('All')")
     on_disk = sorted(x.relative_to(dest).as_posix() for x in dest.rglob("*") if x.is_file() and x.name != "model.json" and not x.relative_to(dest).as_posix().startswith("_thumbs/"))
-    await pg.click('#parts-views [data-view="all"]')
-    await pg.wait_for_selector("#all-files")
-    every = await pg.eval_on_selector_all("#all-files [data-file]", "els => els.map(e => e.dataset.file)")
-    await pg.fill("#all-files .parts-filter", "helmet")
-    await pg.wait_for_function("() => document.querySelectorAll('#all-files [data-file]').length === 2")
-    await pg.click('#parts-views [data-view="type"]')
-    kinds = await pg.eval_on_selector_all("#by-type [data-kind]", "els => els.map(e => e.dataset.kind)")
-    await pg.click('#parts-views [data-view="grid"]')
-    await pg.wait_for_selector("#file-grid .file-tile")
-    await pg.wait_for_function("() => [...document.querySelectorAll('#file-grid img')].some(i => i.complete && i.naturalWidth > 0 && /preview/.test(i.src))", timeout=30000)
-    tiles = await pg.locator("#file-grid .file-tile").count()
-    await pg.screenshot(path=str(out / "13b-files-grid.png"))
-    await pg.wait_for_timeout(600)  # preferences are saved after a short pause
-    kept = json.loads((home / "config/prefs.json").read_text()).get("ml-ui", {}).get("partsView") if (home / "config/prefs.json").exists() else None
-    await pg.click('#parts-views [data-view="folders"]')
-    await pg.wait_for_selector("#part-tree")
-    check("a model's files show as folders, all files, by type and as a grid of previews", sorted(every) == on_disk and kinds == ["model", "image", "doc", "archive"]
-          and tiles == len(on_disk) and kept == "grid", (every, on_disk, kinds, tiles, kept))
+    await pg.click('#file-panel-views [data-view="all"]')
+    await pg.wait_for_selector(".panel-all")
+    every = await pg.eval_on_selector_all(".panel-all [data-filekey^='f:']", "els => els.map(e => e.dataset.filekey.slice(2))")
+    await pg.fill("#file-panel-search", "helmet")
+    await pg.wait_for_function("() => document.querySelectorAll('.panel-all [data-filekey^=\"f:\"]').length === 2")
+    await pg.fill("#file-panel-search", "")
+    await pg.click('#file-panel-views [data-view="type"]')
+    kinds = await pg.eval_on_selector_all("#file-panel-scroll .by-type [data-kind]", "els => els.map(e => e.dataset.kind)")
+    await pg.wait_for_timeout(600)
+    kept = json.loads((home / "config/prefs.json").read_text()).get("ml-ui", {}).get("filePanelView") if (home / "config/prefs.json").exists() else None
+    await pg.click('#file-panel-views [data-view="folders"]')
+    await pg.wait_for_selector("#file-panel-tree")
+    check("a model's file panel has shared folders, list and type views", sorted(every) == on_disk and kinds == ["model", "image", "doc", "archive"] and kept == "type", (every, on_disk, kinds, kept))
 
     # 23. library files can be read in ranges (videos seek)
     req = urllib.request.Request(B + "library/Unsorted/Knight%20Armour/README.md", headers={"Range": "bytes=2-7"})

@@ -636,3 +636,25 @@ branches in `DrFlGd/ML-GPT-C-Test`; the original library remains untouched.
 This package deliberately makes no Rust/core, extraction, Import-workspace or
 original-repository changes. Package B will move the viewer implementations
 out of `parts.js` to `stage.js` and introduce `contents.js`.
+
+### Package B: folder and ZIP contents and viewing area
+
+- `web/ui/stage.js` chooses between the existing STL/OBJ/3MF, picture, document
+  and video viewers and the contents view according to the shared `fileSel.shown`.
+  The renderer implementations stay in `parts.js` for reuse by compact Import;
+  this differs from the proposed physical move into `stage.js`, but keeps the
+  existing viewer logic in one place.
+- `web/ui/contents.js` shows direct child folders before files, reuses
+  `LazyPreview`, `TypeTag`, `SortMenu` and `ViewSwitch`, and supports grid/list,
+  sorting by name/type/size/newest, breadcrumbs, back navigation, shared
+  selection, ZIP entry browsing and Show more at 500 entries.
+- `model_get` adds a local modification-time value per file without changing
+  `model.json`; ZIP timestamps are not surfaced by the archive backend, so
+  Newest falls back to name for entries without timestamps.
+- Existing model viewers still handle supported files, including 3D/pictures
+  inside ZIPs. Unsupported files show name/type/size and an external-open
+  action where supported.
+- Added `tests/contents.test.mjs`, extended `desktop_page.py` checks and
+  wired Node tests into Linux/Windows build workflows. Phase C (loose file
+  recovery) and extraction remain separate work; this release is an interim
+  model-workspace milestone, not completion of the entire design.

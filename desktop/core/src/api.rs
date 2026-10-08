@@ -1442,7 +1442,17 @@ impl App {
                     .await?;
                 let (mut v, dir) = found.ok_or("That model isn't in the library any more.")?;
                 let dir = dir.map_err(e2s)?;
-                v["files_list"] = json!(model::list_files(&dir).into_iter().map(|(rel, size)| json!({ "rel": rel, "size": size, "kind": model::file_kind(&rel) })).collect::<Vec<_>>());
+                // File modification times are local display data for Newest sorting;
+                // keep the portable model.json format unchanged.
+                v["files_list"] = json!(model::list_files(&dir).into_iter().map(|(rel, size)| {
+                    let modified = dir.join(&rel).metadata()
+                        .and_then(|m| m.modified())
+                        .ok()
+                        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                        .map(|d| d.as_millis() as u64)
+                        .unwrap_or(0);
+                    json!({ "rel": rel, "size": size, "kind": model::file_kind(&rel), "modified": modified })
+                }).collect::<Vec<_>>());
                 v["details"] = model::read_sidecar(&dir);
                 // the 3D file shown first (the one its thumbnail is drawn from)
                 v["main"] = json!(thumb::pick_main(&dir)

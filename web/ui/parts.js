@@ -288,6 +288,22 @@ const FILE_SORTS = [["folder", "Folder"], ["name", "Name"], ["size", "Largest fi
 
 /** Model-only navigator rows: Import keeps the same shared PartsViews API and
  * existing compact presentation. Both modes use makeFileTree and TypeTag. */
+
+function panelFolderMenu(e, src, path) {
+  const key = `d:${path}`;
+  const lib = ui.get().library;
+  const items = [{ id: "view", label: "Show here", icon: "eye", run: () => pick(key) }];
+  if (ownApp(src) && lib) items.push({
+    id: "folder", label: "Show in folder", icon: "folder",
+    run: () => ctx.platform.library.openPath([lib.path, src.rel, path].filter(Boolean).join("/")),
+  });
+  openMenu(e, items);
+}
+
+function panelZipEntryMenu(e, key) {
+  openMenu(e, [{ id: "view", label: "Show here", icon: "eye", run: () => pick(key) }]);
+}
+
 function PanelZipNode({ node, archive, selected, select }) {
   const [expanded, setExpanded] = useState({});
   const dirs = [...node.dirs.values()].sort((a, b) => a.name.localeCompare(b.name));
@@ -299,7 +315,8 @@ function PanelZipNode({ node, archive, selected, select }) {
         <button type="button" class="file-panel-twisty" aria-label=${opened ? "Collapse folder" : "Expand folder"} aria-expanded=${opened}
           onClick=${() => setExpanded({ ...expanded, [d.path]: !opened })}>${Icon.chevron(12)}</button>
         <button type="button" data-filekey=${key} class=${`tree-btn${selected.picked.includes(key) ? " on" : ""}`}
-          aria-selected=${selected.picked.includes(key)} onClick=${(e) => select(e, key)}>${Icon.folder(13)} ${d.name}</button>
+          aria-selected=${selected.picked.includes(key)} onClick=${(e) => select(e, key)}
+          onContextMenu=${(e) => { if (!selected.picked.includes(key)) pick(key); panelZipEntryMenu(e, key); }}>${Icon.folder(13)} ${d.name}</button>
       </div>
       ${opened ? html`<ul class="tree"><${PanelZipNode} node=${d} archive=${archive} selected=${selected} select=${select} /></ul>` : null}
     </li>`;
@@ -308,7 +325,8 @@ function PanelZipNode({ node, archive, selected, select }) {
     const key = `z:${archive}!${f.rel}`;
     return html`<li class="tree-file in-zip" key=${key}><button type="button" data-filekey=${key}
       class=${`tree-btn${selected.picked.includes(key) ? " on" : ""}`} aria-selected=${selected.picked.includes(key)}
-      onClick=${(e) => select(e, key)}><span class="tree-icon tree-type"><${TypeTag} name=${f.rel} /></span>
+      onClick=${(e) => select(e, key)}
+      onContextMenu=${(e) => { if (!selected.picked.includes(key)) pick(key); panelZipEntryMenu(e, key); }}><span class="tree-icon tree-type"><${TypeTag} name=${f.rel} /></span>
       <span class="tree-name">${f.name}</span><span class="tree-size muted">${size(f.size || 0)}</span></button></li>`;
   })}`;
 }
@@ -368,7 +386,8 @@ function PanelNode({ node, src, names, selected, select, depth = 0 }) {
           aria-label=${opened ? "Collapse folder" : "Expand folder"} aria-expanded=${opened}
           onClick=${() => setExpanded({ ...expanded, [d.path]: !opened })}>${Icon.chevron(12)}</button>
         <button type="button" data-filekey=${key} class=${`tree-btn${selected.picked.includes(key) ? " on" : ""}`}
-          aria-selected=${selected.picked.includes(key)} onClick=${(e) => select(e, key)}>
+          aria-selected=${selected.picked.includes(key)} onClick=${(e) => select(e, key)}
+          onContextMenu=${(e) => { if (!selected.picked.includes(key)) pick(key); panelFolderMenu(e, src, d.path); }}>
           <span class="tree-icon">${Icon.folder(13)}</span><span class="tree-name">${d.name}</span>
           ${isVariant(d.name, names) ? html`<span class="badge">variant</span>` : null}
         </button>

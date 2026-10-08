@@ -65,6 +65,8 @@ The UI pass in `docs/PLAN.md` ("UI pass design") is done: actions (0.5.1), undo 
 
 ## Unreleased
 
+- **Model workspace (selection foundation):** shared file selection (`web/ui/filesel.js`) now tracks the model, currently displayed row, multi-selection and range anchor; supports folders, files, ZIP entries, Ctrl/Cmd and Shift selections, arrows, Ctrl+A and Esc. `pickedFiles()` prepares deduplicated paths for the future extract command. Added Node unit tests and a browser acceptance check. The existing model page and Import interface are unchanged.
+
 ## 0.5.4 (2026-10-07)
 
 Import follow-ups (owner's asks after the UI pass; design and notes in docs/PLAN.md, "Import follow-ups").

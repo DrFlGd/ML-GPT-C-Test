@@ -1316,6 +1316,43 @@ def big_library():
     shutil.rmtree(big, ignore_errors=True)
 
 
+async def model_workspace_selection(pg):
+    """Phase A: the shared file-selection contract loads in the browser."""
+    state = await pg.evaluate("""async () => {
+        const m = await import("./ui/filesel.js");
+        const src = {kind: "model", id: "selection-check", rel: "Unsorted/Selection"};
+        const files = [
+            {rel: "Arms/left.stl"}, {rel: "Arms/right.stl"},
+            {rel: "parts.zip"}, {rel: "guide.md"}
+        ];
+        m.setFileSource(src, files, "f:Arms/left.stl");
+        m.show("f:guide.md");
+        const separate = m.fileSel.get().shown === "f:guide.md"
+            && m.fileSel.get().picked[0] === "f:Arms/left.stl";
+        m.pick("f:Arms/left.stl");
+        m.pick("f:Arms/right.stl", "range", [
+            "f:Arms/left.stl", "f:Arms/right.stl", "f:guide.md"
+        ]);
+        const ranged = m.fileSel.get().picked.length === 2;
+        m.pick("d:Arms");
+        const folders = JSON.stringify(m.pickedFiles())
+            === JSON.stringify({files: ["Arms"], entries: []});
+        m.setArchiveEntries("parts.zip", [{name: "Parts/bolt.stl"}]);
+        m.pick("z:parts.zip!Parts/bolt.stl");
+        const archive = JSON.stringify(m.pickedFiles())
+            === JSON.stringify({files: [], entries: [
+                {file: "parts.zip", entry: "Parts/bolt.stl"}
+            ]});
+        m.clear();
+        const cleared = m.fileSel.get().picked.length === 0;
+        m.setFileSource({kind: "model", id: "other", rel: "Unsorted/Other"}, files);
+        const reset = m.fileSel.get().shown === "d:"
+            && m.fileSel.get().picked.length === 1;
+        return {separate, ranged, folders, archive, cleared, reset};
+    }""")
+    check("model workspace selection contract works in the page", all(state.values()), state)
+
+
 async def main():
     server = start_server()
     try:
@@ -1361,6 +1398,7 @@ async def main():
             await ui_pass2(pg)
             await ui_pass3(pg)
             await import_follow_ups(pg)
+            await model_workspace_selection(pg)
 
             # 3. renaming the library
             await pg.click('.sidebar a[href="#/settings"]')

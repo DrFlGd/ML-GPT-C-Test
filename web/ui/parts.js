@@ -289,18 +289,19 @@ const FILE_SORTS = [["folder", "Folder"], ["name", "Name"], ["size", "Largest fi
 /** Model-only navigator rows: Import keeps the same shared PartsViews API and
  * existing compact presentation. Both modes use makeFileTree and TypeTag. */
 function PanelZipNode({ node, archive, selected, select }) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState({});
   const dirs = [...node.dirs.values()].sort((a, b) => a.name.localeCompare(b.name));
   return html`${dirs.map((d) => {
     const key = `z:${archive}!${d.path}/`;
+    const opened = expanded[d.path] !== false;
     return html`<li class="tree-dir" key=${key}>
       <div class="file-panel-row">
-        <button type="button" class="file-panel-twisty" aria-label=${expanded ? "Collapse folder" : "Expand folder"} aria-expanded=${expanded}
-          onClick=${() => setExpanded(!expanded)}>${Icon.chevron(12)}</button>
+        <button type="button" class="file-panel-twisty" aria-label=${opened ? "Collapse folder" : "Expand folder"} aria-expanded=${opened}
+          onClick=${() => setExpanded({ ...expanded, [d.path]: !opened })}>${Icon.chevron(12)}</button>
         <button type="button" data-filekey=${key} class=${`tree-btn${selected.picked.includes(key) ? " on" : ""}`}
           aria-selected=${selected.picked.includes(key)} onClick=${(e) => select(e, key)}>${Icon.folder(13)} ${d.name}</button>
       </div>
-      ${expanded ? html`<ul class="tree"><${PanelZipNode} node=${d} archive=${archive} selected=${selected} select=${select} /></ul>` : null}
+      ${opened ? html`<ul class="tree"><${PanelZipNode} node=${d} archive=${archive} selected=${selected} select=${select} /></ul>` : null}
     </li>`;
   })}
   ${node.files.map((f) => {
